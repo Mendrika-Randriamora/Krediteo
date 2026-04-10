@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/scan_state.dart';
 
@@ -109,14 +108,6 @@ class _ScanOverlayState extends State<ScanOverlay>
               top: frameTop + frameH + 24,
               child: _buildStatusLabel(),
             ),
-
-            // Instruction en haut
-            Positioned(
-              top: 56,
-              left: 24,
-              right: 24,
-              child: _buildTopHint(),
-            ),
           ],
         );
       },
@@ -214,33 +205,6 @@ class _ScanOverlayState extends State<ScanOverlay>
               fontSize: 14,
               fontWeight: FontWeight.w500,
               letterSpacing: 0.3,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopHint() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.45),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.15)),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.qr_code_scanner_rounded, color: Colors.white70, size: 16),
-          SizedBox(width: 8),
-          Text(
-            'Scanner OCR • Numéro 14 chiffres',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-              letterSpacing: 0.2,
             ),
           ),
         ],

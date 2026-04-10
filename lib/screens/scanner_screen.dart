@@ -3,12 +3,15 @@ import 'package:flutter/services.dart';
 // import 'package:vibration/vibration.dart';
 
 import '../models/scan_state.dart';
+import '../models/operator.dart';
 import '../services/camera_service.dart';
 import '../services/call_service.dart';
 import '../services/ocr_service.dart';
+import '../services/persistence_service.dart';
 import '../widgets/camera_preview_widget.dart';
 import '../widgets/number_result_card.dart';
 import '../widgets/scan_overlay.dart';
+import '../widgets/operator_selector.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -22,8 +25,10 @@ class _ScannerScreenState extends State<ScannerScreen>
   final _cameraService = CameraService();
   final _ocrService = OcrService();
   final _callService = CallService();
+  final _persistenceService = PersistenceService();
 
   ScanState _state = const ScanState.idle();
+  Operator _selectedOperator = Operator.yas;
   bool _isInitializing = true;
   String? _initError;
   Key _cardKey = UniqueKey();
@@ -37,7 +42,21 @@ class _ScannerScreenState extends State<ScannerScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _loadSettings();
     _initCamera();
+  }
+
+  Future<void> _loadSettings() async {
+    final operator = await _persistenceService.getOperator();
+    if (mounted) {
+      setState(() => _selectedOperator = operator);
+    }
+  }
+
+  Future<void> _handleOperatorChanged(Operator operator) async {
+    HapticFeedback.lightImpact();
+    setState(() => _selectedOperator = operator);
+    await _persistenceService.saveOperator(operator);
   }
 
   @override
@@ -131,7 +150,7 @@ class _ScannerScreenState extends State<ScannerScreen>
     final number = _state.detectedNumber;
     if (number == null) return;
     HapticFeedback.heavyImpact();
-    final success = await _callService.call(number);
+    final success = await _callService.call(number, _selectedOperator);
 
     if (!success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -194,7 +213,20 @@ class _ScannerScreenState extends State<ScannerScreen>
         // 2. Overlay de scan (fond semi-transparent + cadre + animation)
         ScanOverlay(status: _state.status),
 
-        // 3. Carte de résultat (slide depuis le bas quand détecté)
+        // 3. Sélecteur d'opérateur (Pill en haut)
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 20,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: OperatorSelector(
+              selectedOperator: _selectedOperator,
+              onOperatorChanged: _handleOperatorChanged,
+            ),
+          ),
+        ),
+
+        // 4. Carte de résultat (slide depuis le bas quand détecté)
         Positioned(
           left: 0,
           right: 0,

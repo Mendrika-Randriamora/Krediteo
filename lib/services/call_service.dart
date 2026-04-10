@@ -1,5 +1,6 @@
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../models/operator.dart';
 
 class CallService {
   DateTime? _lastCallTime;
@@ -7,7 +8,7 @@ class CallService {
   /// Délai anti-spam entre deux appels (secondes)
   static const int _cooldownSeconds = 3;
 
-  Future<bool> call(String number) async {
+  Future<bool> call(String number, Operator operator) async {
     final now = DateTime.now();
     if (_lastCallTime != null &&
         now.difference(_lastCallTime!).inSeconds < _cooldownSeconds) {
@@ -20,9 +21,8 @@ class CallService {
 
     final cleanNumber = _sanitizeNumber(number);
 
-    // Format USSD : #321*14chiffres#
-    // Le # doit être encodé en %23 dans une URI tel:
-    final ussd = '%23321*$cleanNumber%23';
+    // Formatage selon l'opérateur
+    final ussd = operator.formatUri(cleanNumber);
     final uri = Uri.parse('tel:$ussd');
 
     // Pour les codes USSD, LaunchMode.externalApplication est recommandé
