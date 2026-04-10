@@ -172,43 +172,21 @@ class _ScanOverlayState extends State<ScanOverlay>
   }
 
   Widget _buildStatusLabel() {
-    final (text, color, icon) = switch (widget.status) {
-      ScanStatus.idle => (
-      'Pointez vers un numéro à 14 chiffres',
-      Colors.white70,
-      Icons.search_rounded,
-      ),
-      ScanStatus.scanning => (
-      'Analyse en cours…',
-      const Color(0xFF38BDF8),
-      Icons.center_focus_strong_rounded,
-      ),
-      ScanStatus.detected => (
-      'Numéro détecté !',
-      const Color(0xFF4ADE80),
-      Icons.check_circle_rounded,
-      ),
-    };
-
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
-      child: Row(
-        key: _statusKey,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: TextStyle(
-              color: color,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.3,
-            ),
+    return const Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.search_rounded, color: Colors.white54, size: 16),
+        SizedBox(width: 8),
+        Text(
+          'Pointez vers un numéro à 14 chiffres',
+          style: TextStyle(
+            color: Colors.white54,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.3,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
