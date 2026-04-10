@@ -32,40 +32,61 @@ class OcrService {
       final inputImage = _buildInputImage(image, rotation);
       if (inputImage == null) return null;
 
-      final recognized = await _recognizer.processImage(inputImage);
-      return _extractNumber(recognized.text);
-    } catch (_) {
+      final RecognizedText recognized = await _recognizer.processImage(inputImage);
+      
+      // Calculer le centre de l'image (en tenant compte de la rotation)
+      // Si rotation 90/270, width et height sont inversés pour ML Kit
+      final bool isRotated = rotation == InputImageRotation.rotation90deg || 
+                           rotation == InputImageRotation.rotation270deg;
+      final double centerX = (isRotated ? image.height : image.width) / 2;
+      final double centerY = (isRotated ? image.width : image.height) / 2;
+
+      return _extractBestNumber(recognized, centerX, centerY);
+    } catch (e) {
+      dev.log('OCR Error: $e');
       return null;
     } finally {
       _isProcessing = false;
     }
   }
 
-  /// Cherche un numéro à 14 chiffres dans le texte reconnu
-  // String? _extractNumber(String text) {
-  //   // Nettoyage : supprimer espaces et tirets entre chiffres (ex: "1234 5678 9012 34")
-  //   final cleaned = text.replaceAll(RegExp(r'(?<=\d)[\s\-.](?=\d)'), '');
-  //   final match = _numberRegex.firstMatch(cleaned);
-  //   return match?.group(1);
-  // }
-  String? _extractNumber(String text) {
-    // Chercher d'abord sur chaque ligne individuellement
-    for (final line in text.split('\n')) {
-      final cleanedLine = line.replaceAll(RegExp(r'(?<=\d)[\s\-.](?=\d)'), '');
-      final match = _numberRegex.firstMatch(cleanedLine);
-      if (match != null) {
-        print('=== MATCH sur ligne "${line.trim()}" : ${match.group(1)} ===');
-        return match.group(1);
+  /// Trouve le meilleur numéro (le plus central) parmi tous les blocs détectés
+  String? _extractBestNumber(RecognizedText recognized, double centerX, double centerY) {
+    String? bestNumber;
+    double minDistance = double.infinity;
+
+    for (final block in recognized.blocks) {
+      for (final line in block.lines) {
+        // Nettoyage de la ligne pour trouver les numéros potentiels
+        // (on garde les espaces/tirets pour le split si besoin, mais on nettoie pour le regex)
+        final cleanedLine = line.text.replaceAll(RegExp(r'(?<=\d)[\s\-.](?=\d)'), '');
+        final match = _numberRegex.firstMatch(cleanedLine);
+
+        if (match != null) {
+          final number = match.group(1)!;
+          
+          // Calculer le centre de la ligne
+          final rect = line.boundingBox;
+          final lineCenterX = rect.left + rect.width / 2;
+          final lineCenterY = rect.top + rect.height / 2;
+
+          // Distance au centre de l'image (au carré pour la perf)
+          final distanceSq = (lineCenterX - centerX) * (lineCenterX - centerX) +
+                             (lineCenterY - centerY) * (lineCenterY - centerY);
+
+          if (distanceSq < minDistance) {
+            minDistance = distanceSq;
+            bestNumber = number;
+          }
+        }
       }
     }
 
-    // Fallback : chercher dans le texte entier nettoyé
-    final cleaned = text
-        .replaceAll('\n', ' ')
-        .replaceAll(RegExp(r'(?<=\d)[\s\-.](?=\d)'), '');
-    final match = _numberRegex.firstMatch(cleaned);
-    print('=== MATCH global : ${match?.group(1) ?? "AUCUN"} ===');
-    return match?.group(1);
+    if (bestNumber != null) {
+      dev.log('=== MATCH OPTIMAL : $bestNumber (dist: ${minDistance.toStringAsFixed(0)}) ===');
+    }
+    
+    return bestNumber;
   }
 
   /// Convertit une CameraImage en InputImage pour ML Kit

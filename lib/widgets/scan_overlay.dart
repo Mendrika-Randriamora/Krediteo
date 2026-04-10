@@ -20,6 +20,7 @@ class _ScanOverlayState extends State<ScanOverlay>
   late Animation<double> _scanLineAnim;
   late Animation<double> _pulseAnim;
   late Animation<double> _successAnim;
+  Key _statusKey = UniqueKey();
 
   @override
   void initState() {
@@ -56,9 +57,11 @@ class _ScanOverlayState extends State<ScanOverlay>
   @override
   void didUpdateWidget(ScanOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.status == ScanStatus.detected &&
-        oldWidget.status != ScanStatus.detected) {
-      _successController.forward(from: 0);
+    if (widget.status != oldWidget.status) {
+      _statusKey = UniqueKey();
+      if (widget.status == ScanStatus.detected) {
+        _successController.forward(from: 0);
+      }
     }
   }
 
@@ -199,7 +202,7 @@ class _ScanOverlayState extends State<ScanOverlay>
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
       child: Row(
-        key: ValueKey(widget.status),
+        key: _statusKey,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, color: color, size: 16),

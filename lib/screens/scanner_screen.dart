@@ -26,9 +26,10 @@ class _ScannerScreenState extends State<ScannerScreen>
   ScanState _state = const ScanState.idle();
   bool _isInitializing = true;
   String? _initError;
+  Key _cardKey = UniqueKey();
 
-  // Anti-spam : temps de gel après détection (ms)
-  static const int _detectionCooldownMs = 2500;
+  // Anti-spam : temps de gel après détection d'un nouveau numéro (ms)
+  static const int _detectionCooldownMs = 1200;
   DateTime _lastDetectionTime = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
@@ -71,34 +72,52 @@ class _ScannerScreenState extends State<ScannerScreen>
 
   Future<void> _startStream() async {
     await _cameraService.startImageStream((image, rotation) async {
-      // Ignorer les frames si on est en cooldown post-détection
       final now = DateTime.now();
-      if (now.difference(_lastDetectionTime).inMilliseconds < _detectionCooldownMs) {
-        return;
-      }
+      final msSinceLast = now.difference(_lastDetectionTime).inMilliseconds;
 
-      // Indiquer que l'OCR tourne (sans flood du setState)
-      if (_state.status == ScanStatus.idle && mounted) {
-        setState(() => _state = const ScanState.scanning());
-      }
+      // Throttle l'analyse OCR pour économiser la batterie et le CPU
+      if (msSinceLast < 400) return;
 
       final number = await _ocrService.processFrame(image, rotation);
-
       if (!mounted) return;
 
       if (number != null) {
-        _lastDetectionTime = DateTime.now();
-        _vibrate();
-        // Force l'exécution sur le main thread
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            setState(() => _state = ScanState.detected(number));
+        final isNewNumber = number != _state.detectedNumber;
+        
+        // Si c'est un nouveau numéro, on impose un cooldown minimum pour laisser l'utilisateur lire
+        if (isNewNumber && msSinceLast < _detectionCooldownMs) {
+          return;
+        }
+
+        if (isNewNumber) {
+          _lastDetectionTime = now;
+          _vibrate();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _cardKey = UniqueKey();
+                _state = ScanState.detected(number);
+              });
+            }
+          });
+        } else {
+          // Même numéro : on rafraîchit le timestamp pour maintenir l'affichage
+          _lastDetectionTime = now;
+        }
+      } else {
+        // Aucun numéro détecté dans cette frame
+        if (_state.status == ScanStatus.detected) {
+          // On garde l'affichage pendant 1.5s après la disparition du numéro
+          if (msSinceLast > 1500) {
+            setState(() => _state = const ScanState.scanning());
           }
-        });
-      } else if (_state.status == ScanStatus.scanning) {
-        // Revenir à idle seulement si pas de numéro détecté récemment
-        if (now.difference(_lastDetectionTime).inMilliseconds > 800) {
-          setState(() => _state = const ScanState.idle());
+        } else if (_state.status == ScanStatus.scanning) {
+          if (msSinceLast > 1000) {
+            setState(() => _state = const ScanState.idle());
+          }
+        } else if (_state.status == ScanStatus.idle && msSinceLast > 500) {
+          // Repasser en scanning pour montrer que l'app cherche toujours
+          setState(() => _state = const ScanState.scanning());
         }
       }
     });
@@ -128,6 +147,7 @@ class _ScannerScreenState extends State<ScannerScreen>
     setState(() {
       _state = const ScanState.idle();
       _lastDetectionTime = DateTime.fromMillisecondsSinceEpoch(0);
+      _cardKey = UniqueKey();
     });
   }
 
@@ -183,7 +203,7 @@ class _ScannerScreenState extends State<ScannerScreen>
             duration: const Duration(milliseconds: 300),
             child: _state.status == ScanStatus.detected && _state.hasNumber
                 ? NumberResultCard(
-              key: ValueKey(_state.detectedNumber),
+              key: _cardKey,
               number: _state.detectedNumber!,
               onCall: _handleCall,
               onDismiss: _dismissResult,
