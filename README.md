@@ -71,6 +71,7 @@ flutter run
 | Throttling OCR | 400ms entre chaque analyse (évite le lag) |
 | Anti-spam appel | Cooldown 3s entre deux appels |
 | Anti-spam détection | Gel 2.5s après chaque détection |
+| Durée affichage | Persistance 3s après perte du numéro |
 | Feedback haptique | Vibration 120ms à la détection |
 | États visuels | idle / scanning / detected avec transitions animées |
 | Copier numéro | Tap sur l'icône copie dans le presse-papier |

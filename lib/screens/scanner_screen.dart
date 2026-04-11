@@ -34,7 +34,7 @@ class _ScannerScreenState extends State<ScannerScreen>
   Key _cardKey = UniqueKey();
 
   // Anti-spam : temps de gel après détection d'un nouveau numéro (ms)
-  static const int _detectionCooldownMs = 1200;
+  static const int _detectionCooldownMs = 2500;
   DateTime _lastDetectionTime = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
@@ -126,8 +126,8 @@ class _ScannerScreenState extends State<ScannerScreen>
       } else {
         // Aucun numéro détecté dans cette frame
         if (_state.status == ScanStatus.detected) {
-          // On garde l'affichage pendant 1.5s après la disparition du numéro
-          if (msSinceLast > 1500) {
+          // On garde l'affichage pendant 3s après la disparition du numéro
+          if (msSinceLast > 3000) {
             setState(() => _state = const ScanState.scanning());
           }
         } else if (_state.status == ScanStatus.scanning) {
