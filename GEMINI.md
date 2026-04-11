@@ -35,6 +35,7 @@ Krediteo is a Flutter-based mobile application designed for real-time OCR (Optic
 - **Regex:** The app strictly looks for 14-digit numbers using `(?<!\d)(\d{14})(?!\d)`.
 - **Throttling:** OCR processing is throttled to once every 400ms to maintain UI performance and reduce CPU usage.
 - **Cooldown:** After a successful detection, there is a 2.5s "freeze" period to prevent duplicate scans of the same number.
+- **Display Duration:** The detected number remains visible for 3 seconds after disappearing from the camera view.
 
 ### UI & Styling
 - **Theme:** Material 3 with a dark-themed, immersive aesthetic (Slate/Black/Cyan palette).
