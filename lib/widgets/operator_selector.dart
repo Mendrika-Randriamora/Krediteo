@@ -4,22 +4,36 @@ import '../models/operator.dart';
 class OperatorSelector extends StatelessWidget {
   final Operator selectedOperator;
   final ValueChanged<Operator> onOperatorChanged;
+  final bool isFlashOn;
 
   const OperatorSelector({
     super.key,
     required this.selectedOperator,
     required this.onOperatorChanged,
+    this.isFlashOn = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.4),
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(
+          color: isFlashOn ? Colors.white.withOpacity(0.4) : Colors.white10,
+        ),
+        boxShadow: isFlashOn
+            ? [
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.15),
+                  blurRadius: 15,
+                  spreadRadius: 2,
+                )
+              ]
+            : [],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

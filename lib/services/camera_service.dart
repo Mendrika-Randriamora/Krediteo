@@ -51,6 +51,16 @@ class CameraService {
     }
   }
 
+  /// Définit le mode du flash (OFF, TORCH, etc.)
+  Future<void> setFlashMode(FlashMode mode) async {
+    if (_controller == null || !isInitialized) return;
+    try {
+      await _controller!.setFlashMode(mode);
+    } catch (e) {
+      // Ignorer si le flash n'est pas supporté ou erreur temporaire
+    }
+  }
+
   /// Convertit l'orientation du capteur en InputImageRotation
   InputImageRotation _getRotation(int sensorOrientation) {
     final deviceOrientation = _controller?.value.deviceOrientation
