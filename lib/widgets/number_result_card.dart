@@ -220,7 +220,7 @@ class _NumberResultCardState extends State<NumberResultCard>
                       onPressed: widget.onCall,
                       icon: const Icon(Icons.call_rounded, size: 20),
                       label: Text(
-                        'Appeler  ${_formatNumber(widget.number)}',
+                        'Appeler',
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
