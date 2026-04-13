@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:camera/camera.dart';
 // import 'package:vibration/vibration.dart';
 
 import '../models/scan_state.dart';
@@ -32,6 +33,7 @@ class _ScannerScreenState extends State<ScannerScreen>
   bool _isInitializing = true;
   String? _initError;
   Key _cardKey = UniqueKey();
+  bool _isFlashOn = false;
 
   // Anti-spam : temps de gel après détection d'un nouveau numéro (ms)
   static const int _detectionCooldownMs = 2500;
@@ -65,6 +67,7 @@ class _ScannerScreenState extends State<ScannerScreen>
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
         _cameraService.stopImageStream();
+        if (_isFlashOn) _toggleFlash(false);
         break;
       case AppLifecycleState.resumed:
         _startStream();
@@ -87,6 +90,17 @@ class _ScannerScreenState extends State<ScannerScreen>
         _initError = e.toString();
       });
     }
+  }
+
+  Future<void> _toggleFlash(bool on) async {
+    if (!_cameraService.isInitialized || _isFlashOn == on) return;
+    
+    if (on) {
+      HapticFeedback.mediumImpact();
+    }
+    
+    setState(() => _isFlashOn = on);
+    await _cameraService.setFlashMode(on ? FlashMode.torch : FlashMode.off);
   }
 
   Future<void> _startStream() async {
@@ -204,46 +218,52 @@ class _ScannerScreenState extends State<ScannerScreen>
       );
     }
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // 1. Flux caméra
-        CameraPreviewWidget(controller: _cameraService.controller!),
+    return GestureDetector(
+      onLongPressStart: (_) => _toggleFlash(true),
+      onLongPressEnd: (_) => _toggleFlash(false),
+      behavior: HitTestBehavior.translucent,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // 1. Flux caméra
+          CameraPreviewWidget(controller: _cameraService.controller!),
 
-        // 2. Overlay de scan (fond semi-transparent + cadre + animation)
-        ScanOverlay(status: _state.status),
+          // 2. Overlay de scan (fond semi-transparent + cadre + animation)
+          ScanOverlay(status: _state.status),
 
-        // 3. Sélecteur d'opérateur (Pill en haut)
-        Positioned(
-          top: MediaQuery.of(context).padding.top + 20,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: OperatorSelector(
-              selectedOperator: _selectedOperator,
-              onOperatorChanged: _handleOperatorChanged,
+          // 3. Sélecteur d'opérateur (Pill en haut)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 20,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: OperatorSelector(
+                selectedOperator: _selectedOperator,
+                onOperatorChanged: _handleOperatorChanged,
+                isFlashOn: _isFlashOn,
+              ),
             ),
           ),
-        ),
 
-        // 4. Carte de résultat (slide depuis le bas quand détecté)
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: _state.status == ScanStatus.detected && _state.hasNumber
-                ? NumberResultCard(
-              key: _cardKey,
-              number: _state.detectedNumber!,
-              onCall: _handleCall,
-              onDismiss: _dismissResult,
-            )
-                : const SizedBox.shrink(),
+          // 4. Carte de résultat (slide depuis le bas quand détecté)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _state.status == ScanStatus.detected && _state.hasNumber
+                  ? NumberResultCard(
+                key: _cardKey,
+                number: _state.detectedNumber!,
+                onCall: _handleCall,
+                onDismiss: _dismissResult,
+              )
+                  : const SizedBox.shrink(),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
