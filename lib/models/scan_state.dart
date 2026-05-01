@@ -8,6 +8,9 @@ enum ScanStatus {
 
   /// Numéro valide détecté
   detected,
+
+  /// Appel en cours d'initialisation
+  calling,
 }
 
 /// Résultat d'un scan
@@ -28,8 +31,12 @@ class ScanState {
       : status = ScanStatus.scanning,
         detectedNumber = null;
 
-  ScanState.detected(String number)
+  const ScanState.detected(String number)
       : status = ScanStatus.detected,
+        detectedNumber = number;
+
+  const ScanState.calling(String number)
+      : status = ScanStatus.calling,
         detectedNumber = number;
 
   bool get hasNumber => detectedNumber != null;

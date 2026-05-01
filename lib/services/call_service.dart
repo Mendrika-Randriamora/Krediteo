@@ -1,8 +1,10 @@
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/operator.dart';
 
 class CallService {
+  static const _channel = MethodChannel('com.example.krediteo/call');
+
   DateTime? _lastCallTime;
 
   /// Délai anti-spam entre deux appels (secondes)
@@ -17,22 +19,27 @@ class CallService {
 
     // Demander la permission CALL_PHONE au runtime
     final status = await Permission.phone.request();
-    if (!status.isGranted) return false;
+    if (!status.isGranted) {
+      print('Permission d\'appel refusée');
+      return false;
+    }
 
     final cleanNumber = _sanitizeNumber(number);
 
-    // Formatage selon l'opérateur
-    final ussd = operator.formatUri(cleanNumber);
-    final uri = Uri.parse('tel:$ussd');
+    // Formatage selon l'opérateur (on utilise le format brut, l'encodage est fait côté natif)
+    final ussd = operator.formatCall(cleanNumber);
 
-    // Pour les codes USSD, LaunchMode.externalApplication est recommandé
-    if (!await canLaunchUrl(uri)) {
-      print('Impossible de lancer l\'appel pour: $uri');
-      // On tente quand même le launchUrl direct car canLaunchUrl peut échouer pour des USSD
+    try {
+      _lastCallTime = now;
+      final bool? success = await _channel.invokeMethod<bool>(
+        'makeDirectCall',
+        {'number': ussd},
+      );
+      return success ?? false;
+    } on PlatformException catch (e) {
+      print('Erreur lors de l\'appel direct: ${e.message}');
+      return false;
     }
-
-    _lastCallTime = now;
-    return await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   /// Nettoie le numéro (supprime espaces, tirets, etc.)
