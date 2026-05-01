@@ -163,16 +163,30 @@ class _ScannerScreenState extends State<ScannerScreen>
   Future<void> _handleCall() async {
     final number = _state.detectedNumber;
     if (number == null) return;
+    
     HapticFeedback.heavyImpact();
+    
+    setState(() {
+      _state = ScanState.calling(number);
+    });
+
     final success = await _callService.call(number, _selectedOperator);
 
-    if (!success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Impossible de lancer l\'appel. Vérifiez les permissions.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+    if (mounted) {
+      if (success) {
+        // On réinitialise l'état après un succès pour être prêt pour le prochain scan
+        _dismissResult();
+      } else {
+        setState(() {
+          _state = ScanState.detected(number);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Impossible de lancer l\'appel. Vérifiez les permissions.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
   }
 
@@ -252,13 +266,16 @@ class _ScannerScreenState extends State<ScannerScreen>
             bottom: 0,
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
-              child: _state.status == ScanStatus.detected && _state.hasNumber
+              child: (_state.status == ScanStatus.detected ||
+                          _state.status == ScanStatus.calling) &&
+                      _state.hasNumber
                   ? NumberResultCard(
-                key: _cardKey,
-                number: _state.detectedNumber!,
-                onCall: _handleCall,
-                onDismiss: _dismissResult,
-              )
+                      key: _cardKey,
+                      number: _state.detectedNumber!,
+                      onCall: _handleCall,
+                      onDismiss: _dismissResult,
+                      isCalling: _state.status == ScanStatus.calling,
+                    )
                   : const SizedBox.shrink(),
             ),
           ),

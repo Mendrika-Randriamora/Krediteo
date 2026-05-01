@@ -6,12 +6,14 @@ class NumberResultCard extends StatefulWidget {
   final String number;
   final VoidCallback onCall;
   final VoidCallback onDismiss;
+  final bool isCalling;
 
   const NumberResultCard({
     super.key,
     required this.number,
     required this.onCall,
     required this.onDismiss,
+    this.isCalling = false,
   });
 
   @override
@@ -216,17 +218,8 @@ class _NumberResultCardState extends State<NumberResultCard>
                   child: SizedBox(
                     width: double.infinity,
                     height: 52,
-                    child: ElevatedButton.icon(
-                      onPressed: widget.onCall,
-                      icon: const Icon(Icons.call_rounded, size: 20),
-                      label: Text(
-                        'Appeler',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
+                    child: ElevatedButton(
+                      onPressed: widget.isCalling ? null : widget.onCall,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF22C55E),
                         foregroundColor: Colors.white,
@@ -234,7 +227,32 @@ class _NumberResultCardState extends State<NumberResultCard>
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
+                        disabledBackgroundColor: const Color(0xFF22C55E).withOpacity(0.6),
                       ),
+                      child: widget.isCalling
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(Icons.call_rounded, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Appeler',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
                 ),
