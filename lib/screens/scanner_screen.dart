@@ -105,6 +105,8 @@ class _ScannerScreenState extends State<ScannerScreen>
 
   Future<void> _startStream() async {
     await _cameraService.startImageStream((image, rotation) async {
+      if (!mounted || _state.status == ScanStatus.calling) return;
+
       final now = DateTime.now();
       final msSinceLast = now.difference(_lastDetectionTime).inMilliseconds;
 
@@ -144,12 +146,8 @@ class _ScannerScreenState extends State<ScannerScreen>
           if (msSinceLast > 3000) {
             setState(() => _state = const ScanState.scanning());
           }
-        } else if (_state.status == ScanStatus.scanning) {
-          if (msSinceLast > 1000) {
-            setState(() => _state = const ScanState.idle());
-          }
-        } else if (_state.status == ScanStatus.idle && msSinceLast > 500) {
-          // Repasser en scanning pour montrer que l'app cherche toujours
+        } else if (_state.status == ScanStatus.idle) {
+          // Si on était en idle et qu'on cherche (flux actif), on passe en scanning
           setState(() => _state = const ScanState.scanning());
         }
       }
@@ -163,23 +161,37 @@ class _ScannerScreenState extends State<ScannerScreen>
   Future<void> _handleCall() async {
     final number = _state.detectedNumber;
     if (number == null) return;
+    
     HapticFeedback.heavyImpact();
+    
+    setState(() {
+      _state = ScanState.calling(number);
+    });
+
     final success = await _callService.call(number, _selectedOperator);
 
-    if (!success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Impossible de lancer l\'appel. Vérifiez les permissions.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+    if (mounted) {
+      if (success) {
+        // On réinitialise l'état après un succès pour être prêt pour le prochain scan
+        _dismissResult();
+      } else {
+        setState(() {
+          _state = ScanState.detected(number);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Impossible de lancer l\'appel. Vérifiez les permissions.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
   }
 
   void _dismissResult() {
     setState(() {
-      _state = const ScanState.idle();
-      _lastDetectionTime = DateTime.fromMillisecondsSinceEpoch(0);
+      _state = const ScanState.scanning();
+      _lastDetectionTime = DateTime.now();
       _cardKey = UniqueKey();
     });
   }
@@ -252,13 +264,16 @@ class _ScannerScreenState extends State<ScannerScreen>
             bottom: 0,
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
-              child: _state.status == ScanStatus.detected && _state.hasNumber
+              child: (_state.status == ScanStatus.detected ||
+                          _state.status == ScanStatus.calling) &&
+                      _state.hasNumber
                   ? NumberResultCard(
-                key: _cardKey,
-                number: _state.detectedNumber!,
-                onCall: _handleCall,
-                onDismiss: _dismissResult,
-              )
+                      key: _cardKey,
+                      number: _state.detectedNumber!,
+                      onCall: _handleCall,
+                      onDismiss: _dismissResult,
+                      isCalling: _state.status == ScanStatus.calling,
+                    )
                   : const SizedBox.shrink(),
             ),
           ),
