@@ -79,7 +79,7 @@ class OcrService {
             lineCenterY <= zoneBottom;
 
         if (!isInZone) {
-          dev.log('Hors zone: "${line.text}" (cx:${lineCenterX.toInt()}, cy:${lineCenterY.toInt()})');
+          // dev.log('Hors zone: "${line.text}" (cx:${lineCenterX.toInt()}, cy:${lineCenterY.toInt()})');
           continue;
         }
 
@@ -88,7 +88,7 @@ class OcrService {
         final match = _numberRegex.firstMatch(cleaned);
 
         if (match != null) {
-          dev.log('IN ZONE: "${line.text}" → ${match.group(1)}');
+          // dev.log('IN ZONE: "${line.text}" → ${match.group(1)}');
           return match.group(1);
         }
       }
