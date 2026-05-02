@@ -1,102 +1,86 @@
-# OCR Scanner Flutter
+# Krediteo - OCR Scanner
 
-Scanner temps réel de numéros à 14 chiffres via Google ML Kit.
+<p align="center">
+  <img src="assets/logo/icon.png" alt="Krediteo Logo" width="200"/>
+</p>
 
-## Structure du projet
+Krediteo is a real-time OCR (Optical Character Recognition) application built with Flutter. It is specifically designed to detect exactly 14-digit numbers from a live camera stream and provide immediate actions, such as launching USSD calls.
 
-```
+## Overview
+
+Krediteo leverages Google ML Kit to provide high-performance text recognition on mobile devices. The app is optimized for speed, accuracy, and a seamless user experience, making it ideal for tasks like scanning top-up cards or identification numbers.
+
+## Core Features
+
+- **Real-time OCR:** High-speed text recognition using Google ML Kit.
+- **Pattern Matching:** Strictly detects 14-digit numbers using advanced regex.
+- **Instant Actions:** Quick launch of USSD calls (`#321*<number>#`) and clipboard copying.
+- **Performance Optimized:** Throttled processing (400ms) to ensure smooth UI performance.
+- **Robust Detection:** Includes cooldown periods to prevent duplicate scans and persistence logic for better visibility.
+- **Haptic Feedback:** Physical confirmation upon detection and user interaction.
+- **Immersive UI:** A dark-themed, Material 3 design with animated overlays and state transitions.
+
+## Project Structure
+
+```text
 lib/
 ├── main.dart
 ├── models/
-│   └── scan_state.dart          # États: idle / scanning / detected
+│   ├── operator.dart            # Operator definitions (Telma, Orange, Airtel)
+│   └── scan_state.dart          # State management (idle, scanning, detected)
 ├── screens/
-│   └── scanner_screen.dart      # Écran principal, orchestration
+│   └── scanner_screen.dart      # Main screen and logic orchestration
 ├── services/
-│   ├── camera_service.dart      # Init caméra, image stream, rotation
-│   ├── ocr_service.dart         # ML Kit + regex 14 chiffres + throttling
-│   └── call_service.dart        # url_launcher tel: + anti-spam
+│   ├── camera_service.dart      # Camera initialization and stream management
+│   ├── ocr_service.dart         # ML Kit integration and detection logic
+│   ├── call_service.dart        # Telephony and USSD call handling
+│   └── persistence_service.dart # Local storage and settings
 └── widgets/
-    ├── camera_preview_widget.dart  # Flux caméra full screen
-    ├── scan_overlay.dart           # Cadre animé, ligne de scan, état
-    └── number_result_card.dart     # Carte résultat + bouton appel
+    ├── camera_preview_widget.dart  # Full-screen camera stream
+    ├── scan_overlay.dart           # Animated scanning UI and frame
+    ├── operator_selector.dart      # Operator selection interface
+    └── number_result_card.dart     # Actionable detection results
 ```
 
-## Prérequis
+## Getting Started
 
-- Flutter 3.10+
-- Android SDK 21+
-- Un device Android physique (la caméra ne fonctionne pas sur émulateur)
+### Prerequisites
 
-## Installation
+- Flutter SDK 3.10.4 or higher
+- Android SDK 21+ (Minimum) / 34 (Target)
+- Physical Android device (Camera stream and OCR are not supported on most emulators)
 
-### 1. Dépendances
-```bash
-flutter pub get
-```
+### Installation
 
-### 2. Configuration Android
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/yourusername/krediteo.git
+    cd krediteo
+    ```
 
-Dans `android/app/build.gradle`, vérifier :
-```groovy
-android {
-    compileSdkVersion 34
-    defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 34
-    }
-}
-```
+2.  **Install dependencies:**
+    ```bash
+    flutter pub get
+    ```
 
-Dans `android/build.gradle` (projet root) :
-```groovy
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-```
+3.  **Run the application:**
+    ```bash
+    flutter run
+    ```
 
-### 3. Lancer l'app
-```bash
-flutter run
-```
+## Permissions
 
-## Fonctionnalités
+The application requires the following permissions:
+- **Camera:** To capture live video for OCR processing.
+- **Call Phone:** To initiate USSD calls directly from the app.
+- **Vibrate:** For haptic feedback during detection.
 
-| Feature | Détail |
-|---|---|
-| OCR temps réel | Google ML Kit Text Recognition |
-| Regex de détection | `(?<!\d)(\d{14})(?!\d)` — exactement 14 chiffres isolés |
-| Throttling OCR | 400ms entre chaque analyse (évite le lag) |
-| Anti-spam appel | Cooldown 3s entre deux appels |
-| Anti-spam détection | Gel 2.5s après chaque détection |
-| Durée affichage | Persistance 3s après perte du numéro |
-| Feedback haptique | Vibration 120ms à la détection |
-| États visuels | idle / scanning / detected avec transitions animées |
-| Copier numéro | Tap sur l'icône copie dans le presse-papier |
+## Configuration
 
-## Permissions requises (AndroidManifest.xml)
+- **OCR Throttle:** Adjust `_throttleMs` in `lib/services/ocr_service.dart` to balance responsiveness and CPU usage.
+- **Detection Regex:** Modify the pattern in `ocr_service.dart` to detect different numeric formats.
+- **Camera Resolution:** Update `ResolutionPreset` in `lib/services/camera_service.dart`.
 
-- `CAMERA` — accès caméra
-- `CALL_PHONE` — lancer un appel direct
-- `VIBRATE` — feedback haptique
+## License
 
-## Personnalisation
-
-### Changer le throttle OCR
-Dans `lib/services/ocr_service.dart` :
-```dart
-static const int _throttleMs = 400; // réduire = plus réactif, plus de CPU
-```
-
-### Changer le regex de détection
-```dart
-static final RegExp _numberRegex = RegExp(r'(?<!\d)(\d{14})(?!\d)');
-```
-
-### Changer la résolution caméra
-Dans `lib/services/camera_service.dart` :
-```dart
-ResolutionPreset.medium // low | medium | high | veryHigh | ultraHigh | max
-```
+This project is licensed under the terms of the [LICENSE](LICENCE) file.
