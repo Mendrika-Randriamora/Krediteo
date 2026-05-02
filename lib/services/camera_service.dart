@@ -32,6 +32,7 @@ class CameraService {
   /// Démarre le flux d'images et appelle [onFrame] à chaque frame
   Future<void> startImageStream(Function(CameraImage, InputImageRotation) onFrame) async {
     if (_controller == null || !isInitialized) return;
+    if (_controller!.value.isStreamingImages) return;
 
     final camera = _cameras.firstWhere(
           (c) => c.lensDirection == CameraLensDirection.back,

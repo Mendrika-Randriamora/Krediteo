@@ -105,6 +105,8 @@ class _ScannerScreenState extends State<ScannerScreen>
 
   Future<void> _startStream() async {
     await _cameraService.startImageStream((image, rotation) async {
+      if (!mounted || _state.status == ScanStatus.calling) return;
+
       final now = DateTime.now();
       final msSinceLast = now.difference(_lastDetectionTime).inMilliseconds;
 
@@ -144,12 +146,8 @@ class _ScannerScreenState extends State<ScannerScreen>
           if (msSinceLast > 3000) {
             setState(() => _state = const ScanState.scanning());
           }
-        } else if (_state.status == ScanStatus.scanning) {
-          if (msSinceLast > 1000) {
-            setState(() => _state = const ScanState.idle());
-          }
-        } else if (_state.status == ScanStatus.idle && msSinceLast > 500) {
-          // Repasser en scanning pour montrer que l'app cherche toujours
+        } else if (_state.status == ScanStatus.idle) {
+          // Si on était en idle et qu'on cherche (flux actif), on passe en scanning
           setState(() => _state = const ScanState.scanning());
         }
       }
@@ -192,8 +190,8 @@ class _ScannerScreenState extends State<ScannerScreen>
 
   void _dismissResult() {
     setState(() {
-      _state = const ScanState.idle();
-      _lastDetectionTime = DateTime.fromMillisecondsSinceEpoch(0);
+      _state = const ScanState.scanning();
+      _lastDetectionTime = DateTime.now();
       _cardKey = UniqueKey();
     });
   }
