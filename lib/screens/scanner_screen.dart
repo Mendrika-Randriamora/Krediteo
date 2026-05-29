@@ -168,7 +168,8 @@ class _ScannerScreenState extends State<ScannerScreen>
       _state = ScanState.calling(number);
     });
 
-    final success = await _callService.call(number, _selectedOperator);
+    final ussdToCall = _selectedOperator.formatCall(number);
+    final success = await _callService.call(ussdToCall);
 
     if (mounted) {
       if (success) {
