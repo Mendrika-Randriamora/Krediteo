@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'screens/scanner_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialisation de Hive
+  await Hive.initFlutter();
 
   // Forcer l'orientation portrait
   SystemChrome.setPreferredOrientations([
@@ -20,7 +24,7 @@ class OcrScannerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'OCR Scanner',
+      title: 'Krediteo',
       debugShowCheckedModeBanner: false,
       theme: _buildTheme(),
       home: const ScannerScreen(),

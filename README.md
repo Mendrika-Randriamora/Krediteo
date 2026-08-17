@@ -1,7 +1,7 @@
 # Krediteo - OCR Scanner
 
 <p align="center">
-  <img src="assets/logo/icon.png" alt="Krediteo Logo" width="200"/>
+  <img src="assets/logo/1.2.0.png" alt="Krediteo Logo" width="200"/>
 </p>
 
 Krediteo is a real-time OCR (Optical Character Recognition) application built with Flutter. It is specifically designed to detect exactly 14-digit numbers from a live camera stream and provide immediate actions, such as launching USSD calls.
