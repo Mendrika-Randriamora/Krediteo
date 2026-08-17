@@ -24,7 +24,7 @@ class OcrScannerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'OCR Scanner',
+      title: 'Krediteo',
       debugShowCheckedModeBanner: false,
       theme: _buildTheme(),
       home: const ScannerScreen(),
