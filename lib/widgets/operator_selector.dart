@@ -102,12 +102,24 @@ class OperatorSelector extends StatelessWidget {
         const SizedBox(width: 8),
         GestureDetector(
           onTap: () => _openShortcuts(context),
-          child: Container(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.4),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white10),
+              border: Border.all(
+                color: isFlashOn ? Colors.white.withOpacity(0.4) : Colors.white10,
+              ),
+              boxShadow: isFlashOn
+                  ? [
+                      BoxShadow(
+                        color: Colors.white.withOpacity(0.15),
+                        blurRadius: 15,
+                        spreadRadius: 2,
+                      )
+                    ]
+                  : [],
             ),
             child: const Icon(
               Icons.bolt_rounded,
