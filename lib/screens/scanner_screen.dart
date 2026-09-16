@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
+import 'package:permission_handler/permission_handler.dart';
 // import 'package:vibration/vibration.dart';
 
 import '../models/scan_state.dart';
@@ -13,6 +16,7 @@ import '../widgets/camera_preview_widget.dart';
 import '../widgets/number_result_card.dart';
 import '../widgets/scan_overlay.dart';
 import '../widgets/operator_selector.dart';
+import '../widgets/splash_screen.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -34,6 +38,10 @@ class _ScannerScreenState extends State<ScannerScreen>
   String? _initError;
   Key _cardKey = UniqueKey();
   bool _isFlashOn = false;
+
+  /// Signalé à la fin de l'init caméra (succès ou erreur) pour lever le splash.
+  final Completer<void> _cameraReady = Completer<void>();
+  bool _showSplash = true;
 
   // Anti-spam : temps de gel après détection d'un nouveau numéro (ms)
   static const int _detectionCooldownMs = 2500;
@@ -82,13 +90,17 @@ class _ScannerScreenState extends State<ScannerScreen>
       await _cameraService.initialize();
       if (!mounted) return;
       setState(() => _isInitializing = false);
-      await _startStream();
+      // Si le splash est déjà passé (nouvel essai), on reprend le flux OCR.
+      if (!_showSplash) await _startStream();
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _isInitializing = false;
         _initError = e.toString();
       });
+    } finally {
+      // Le splash attend ce signal (succès ou erreur) pour démarrer sa sortie.
+      if (!_cameraReady.isCompleted) _cameraReady.complete();
     }
   }
 
@@ -104,6 +116,7 @@ class _ScannerScreenState extends State<ScannerScreen>
   }
 
   Future<void> _startStream() async {
+    if (_showSplash) return;
     await _cameraService.startImageStream((image, rotation) async {
       if (!mounted || _state.status == ScanStatus.calling) return;
 
@@ -214,7 +227,32 @@ class _ScannerScreenState extends State<ScannerScreen>
   }
 
   Widget _buildBody() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        _buildScannerContent(),
+        if (_showSplash)
+          AbsorbPointer(
+            child: AnimatedSplashScreen(
+              cameraReadyFuture: _cameraReady.future,
+              onSplashFinished: _handleSplashFinished,
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Fin de l'animation du splash : on le retire et on démarre l'OCR.
+  void _handleSplashFinished() {
+    if (!mounted) return;
+    setState(() => _showSplash = false);
+    _startStream();
+  }
+
+  Widget _buildScannerContent() {
     if (_isInitializing) {
+      // Pendant le splash, la base reste noire pour éviter un double indicateur.
+      if (_showSplash) return const SizedBox.shrink();
       return const _LoadingView();
     }
 
@@ -347,6 +385,18 @@ class _ErrorView extends StatelessWidget {
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Réessayer'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF38BDF8),
+                side: const BorderSide(color: Color(0xFF38BDF8)),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => openAppSettings(),
+              icon: const Icon(Icons.settings_rounded),
+              label: const Text('Ouvrir les réglages'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF38BDF8),
                 side: const BorderSide(color: Color(0xFF38BDF8)),

@@ -72,13 +72,13 @@ class OperatorSelector extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? const Color(0xFF38BDF8)
+                        ? const Color(0xFF3E5BE7)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(28),
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: const Color(0xFF38BDF8).withOpacity(0.4),
+                              color: const Color(0xFF3E5BE7).withOpacity(0.4),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             )

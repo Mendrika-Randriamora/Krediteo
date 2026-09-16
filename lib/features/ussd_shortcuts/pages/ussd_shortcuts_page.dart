@@ -139,7 +139,7 @@ class _UssdShortcutsPageState extends State<UssdShortcutsPage> {
                 ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddDialog,
-        backgroundColor: const Color(0xFF38BDF8),
+        backgroundColor: const Color(0xFF3E5BE7),
         child: const Icon(Icons.add, color: Colors.black),
       ),
     );
