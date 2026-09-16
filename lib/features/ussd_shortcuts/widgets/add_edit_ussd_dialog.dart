@@ -134,7 +134,7 @@ class _AddEditUssdDialogState extends State<AddEditUssdDialog> {
             }
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF38BDF8),
+            backgroundColor: const Color(0xFF3E5BE7),
             foregroundColor: Colors.black,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),

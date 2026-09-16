@@ -13,26 +13,14 @@ class ScanOverlay extends StatefulWidget {
 
 class _ScanOverlayState extends State<ScanOverlay>
     with TickerProviderStateMixin {
-  late AnimationController _scanLineController;
   late AnimationController _pulseController;
   late AnimationController _successController;
-  late Animation<double> _scanLineAnim;
   late Animation<double> _pulseAnim;
   late Animation<double> _successAnim;
-  Key _statusKey = UniqueKey();
 
   @override
   void initState() {
     super.initState();
-
-    // Animation de la ligne de scan (de haut en bas)
-    _scanLineController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat();
-    _scanLineAnim = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _scanLineController, curve: Curves.easeInOut),
-    );
 
     // Pulsation du cadre en mode scanning
     _pulseController = AnimationController(
@@ -57,7 +45,6 @@ class _ScanOverlayState extends State<ScanOverlay>
   void didUpdateWidget(ScanOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.status != oldWidget.status) {
-      _statusKey = UniqueKey();
       if (widget.status == ScanStatus.detected) {
         _successController.forward(from: 0);
       }
@@ -66,7 +53,6 @@ class _ScanOverlayState extends State<ScanOverlay>
 
   @override
   void dispose() {
-    _scanLineController.dispose();
     _pulseController.dispose();
     _successController.dispose();
     super.dispose();
@@ -96,10 +82,6 @@ class _ScanOverlayState extends State<ScanOverlay>
               top: frameTop,
               child: _buildFrame(frameW, frameH),
             ),
-
-            // Ligne de scan (visible seulement en mode scanning)
-            if (widget.status == ScanStatus.scanning)
-              _buildScanLine(frameLeft, frameTop, frameW, frameH),
 
             // Label d'état
             Positioned(
@@ -137,34 +119,6 @@ class _ScanOverlayState extends State<ScanOverlay>
           child: CustomPaint(
             size: Size(frameW, frameH),
             painter: _FramePainter(color: color, isDetected: isDetected),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildScanLine(double fl, double ft, double fw, double fh) {
-    return AnimatedBuilder(
-      animation: _scanLineAnim,
-      builder: (_, __) {
-        final y = ft + _scanLineAnim.value * fh;
-        return Positioned(
-          left: fl + 8,
-          top: y,
-          child: Container(
-            width: fw - 16,
-            height: 2,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  const Color(0xFF38BDF8).withOpacity(0.8),
-                  const Color(0xFF38BDF8),
-                  const Color(0xFF38BDF8).withOpacity(0.8),
-                  Colors.transparent,
-                ],
-              ),
-            ),
           ),
         );
       },

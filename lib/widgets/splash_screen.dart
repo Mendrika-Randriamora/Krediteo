@@ -53,10 +53,8 @@ const Duration _kMinHold = Duration(milliseconds: 1500);
 // ═══════════════════════════════════════════════════════════════════════════
 
 const int _kExitMs = 700; // durée totale de la sortie
-const int _kScanPhaseMs = 400; // phase A : ligne de scan
 const int _kCornerExitStartMs = 300; // phase B : départ des coins
 const double _kExitTravel = 60.0; // translation de sortie des coins (dp)
-const double _kScanLineThickness = 2.0;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Réduction des animations (accessibilité)
@@ -111,7 +109,6 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
   late final List<Animation<double>> _cornerOut;
   late final Animation<double> _titleIn;
   late final Animation<double> _titleOut;
-  late final Animation<double> _scanLine;
   late final Animation<double> _backgroundOut;
 
   bool _reducedMotion = false;
@@ -165,12 +162,6 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
     _titleOut = CurvedAnimation(
       parent: _exit,
       curve: Interval(_kCornerExitStartMs / _kExitMs, 0.9, curve: Curves.easeOut),
-    );
-
-    // Sortie : ligne de scan (phase A, 0 → 400 ms).
-    _scanLine = CurvedAnimation(
-      parent: _exit,
-      curve: Interval(0, 0, curve: Curves.easeInOut),
     );
 
     // Sortie : le fond s'efface sur toute la phase B.
@@ -244,15 +235,14 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
         break;
     }
   }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    // Les CurvedAnimation sont disposées par les AnimationControllers parents.
-    _entrance.dispose();
-    _exit.dispose();
-    super.dispose();
-  }
+@override
+void dispose() {
+  WidgetsBinding.instance.removeObserver(this);
+  // Les CurvedAnimation sont disposées par les AnimationControllers parents.
+  _entrance.dispose();
+  _exit.dispose();
+  super.dispose();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -352,67 +342,6 @@ class _AnimatedSplashScreenState extends State<AnimatedSplashScreen>
                 fontWeight: FontWeight.w600,
                 letterSpacing: 2,
                 color: Colors.white,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Ligne de scan horizontale qui balaye l'intérieur du cadre de haut en bas
-  /// pendant la phase A de la sortie.
-  Widget _buildScanLine(Rect frameRect) {
-    return AnimatedBuilder(
-      animation: _scanLine,
-      builder: (context, _) {
-        if (!_exitStarted) {
-          return const SizedBox.shrink();
-        }
-
-        final t = _scanLine.value.clamp(0.0, 1.0);
-        // Le trait s'efface en arrivant en bas (sur les ~25 derniers %).
-        final fade = ((t - 0.75) / 0.25).clamp(0.0, 1.0);
-        final opacity = 0.7 * (1 - fade);
-
-        final inset = _kStrokeWidth / 2;
-        final lineWidth = _kZoneSize - 2 * inset;
-        final y = frameRect.top + inset + (_kZoneSize - 2 * inset) * t;
-        final x = frameRect.left + inset;
-
-        return Positioned(
-          left: x,
-          top: y - 28,
-          width: lineWidth,
-          height: 30,
-          child: IgnorePointer(
-            child: Opacity(
-              opacity: opacity,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Glow vertical léger au-dessus de la ligne.
-                  Expanded(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.white.withValues(alpha: 0),
-                            Colors.white.withValues(alpha: 0.25),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  // La ligne elle-même (~70% d'opacité).
-                  Container(
-                    height: _kScanLineThickness,
-                    color: Colors.white.withValues(alpha: 0.7),
-                  ),
-                ],
               ),
             ),
           ),
